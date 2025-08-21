@@ -1,0 +1,13 @@
+property_id,platform,date,impressions,clicks,bookings,revenue
+miami-beach-101,airbnb,2024-08-18,150,15,3,567
+miami-beach-101,airbnb,2024-08-19,155,16,3,580
+miami-beach-101,airbnb,2024-08-20,45,2,0,0
+austin-loft-203,booking,2024-08-18,200,20,4,800
+austin-loft-203,booking,2024-08-19,210,22,5,1000
+austin-loft-203,booking,2024-08-20,50,3,0,0
+seattle-apt-405,expedia,2024-08-18,180,18,4,720
+seattle-apt-405,expedia,2024-08-19,175,17,3,540
+seattle-apt-405,expedia,2024-08-20,170,16,3,540
+denver-condo-607,airbnb,2024-08-18,120,12,2,400
+denver-condo-607,airbnb,2024-08-19,125,13,2,400
+denver-condo-607,airbnb,2024-08-20,25,1,0,0
