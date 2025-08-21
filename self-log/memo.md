@@ -39,6 +39,14 @@ Error Handling:
 - Missing Data: Partial analysis continues, flags incomplete metrics in alerts
 - False Positives: Feedback buttons in Slack to tune sensitivity per property
 
+Additional Tools Evaluated:
+- Airbyte/Fivetran: ETL tools for data pipeline - n8n's native connectors handle our current ETL needs (Extract from OTA APIs, Transform metrics, Load to monitoring). Reserved for Phase 2 when integrating multiple data warehouses
+- PagerDuty: On-call escalation platform - overkill for current scale. Slack suffices now, PagerDuty for Phase 2 critical alerts requiring 24/7 response
+- OpenAI API: Natural language processing - Phase 2 enhancement for summarizing complex alert patterns and generating executive reports
+- Twilio: SMS/voice alerts - Future addition for after-hours critical alerts when teams aren't monitoring Slack
+- Metabase/Looker: BI visualization - Complementary tools for historical analysis, not real-time alerting
+- Datadog/New Relic: APM monitoring - For n8n platform health, not business metrics
+
 The "And Then What" - Insights to Action:
 Revenue Team Actions:
 - Pricing alerts → Direct link to rate adjustment page
