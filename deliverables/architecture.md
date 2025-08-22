@@ -17,7 +17,7 @@ graph TB
         
         subgraph "3-Stage Analysis Framework"
             S1["Stage 1: First Impressions<br/>• GPT-4 Vision: Photo appeal scoring<br/>• Competitor scraping: Price positioning<br/>• Internal data: Search rank tracking<br/>• Google Trends: Keyword demand"]
-            S2["Stage 2: Conversion Factors<br/>• ReviewsAPI: Sentiment analysis<br/>• GPT-4: Description quality scoring<br/>• AirDNA: Amenity competitiveness<br/>• Internal data: Booking velocity"]
+            S2["Stage 2: Conversion Factors<br/>• Custom scraper + GPT-4: Review sentiment<br/>• GPT-4: Description quality scoring<br/>• AirDNA: Amenity competitiveness<br/>• Internal data: Booking velocity"]
             S3["Stage 3: Performance Metrics<br/>• AirDNA: Market occupancy/ADR benchmarks<br/>• Google Trends: Demand forecasting<br/>• Internal data: Revenue calculations<br/>• Statistical analysis: Performance percentiles"]
         end
         

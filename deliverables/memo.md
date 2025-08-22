@@ -237,6 +237,43 @@ def predict_demand_changes(market):
         }
 ```
 
+## Alert Frequency & Scheduling Strategy
+
+### Recommended Polling Schedule
+- **Every 4 hours (6x daily)**: Primary monitoring for impression/booking changes
+- **8 AM daily**: Comprehensive competitive analysis with AI enrichment
+- **Monday mornings**: Weekly performance report with trend analysis
+- **Real-time**: Error status and listing suspensions (webhook from PMS if available)
+
+### Why This Frequency
+**Every 4 hours** balances:
+- Fast enough to catch listing errors before losing full day of bookings
+- Not so frequent that we alarm teams with normal fluctuations
+- Aligns with OTA crawler update cycles (most update 3-6x daily)
+- Gives teams reasonable response window during business hours
+
+**Daily AI analysis** because:
+- Photo appeal doesn't change minute-to-minute
+- Reduces GPT-4 Vision costs to ~$6/property/month
+- Sufficient for strategic adjustments
+
+### n8n Schedule Trigger Configuration
+```javascript
+// In n8n: Replace Manual Trigger with Schedule Trigger
+Schedule Trigger node:
+- Trigger Times: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
+- Timezone: America/Los_Angeles (or property timezone)
+- Run comprehensive analysis at 08:00
+- Run lightweight checks other times
+```
+
+### Alert Suppression Logic
+Prevent alert fatigue with smart suppression:
+- Don't re-alert same issue within 24 hours unless severity increases
+- Suppress during known maintenance windows
+- Group related alerts (5 properties down on same OTA = platform issue)
+- Weekend alerts only for CRITICAL severity
+
 ## Scalable Investment Options
 
 I've evaluated a tiered approach to balance cost with ROI potential:
