@@ -1,0 +1,236 @@
+{
+  "name": "kasa_takehome",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -224
+      ],
+      "id": "395e6181-f4e1-41d8-bbe2-270e468caa14",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Paste this into a Code node in n8n to simulate OTA data with real anomalies\n\n// Simulate data that would come from OTA APIs/Data Warehouse\nconst otaData = [\n  {\n    property_id: \"kasa_miami_beach_101\",\n    property_name: \"Kasa Miami Beach Ocean View\",\n    platform: \"airbnb\",\n    date: \"2024-08-20\",\n    impressions: 380,  // 70% drop from 1250 average!\n    impressions_avg: 1250,\n    clicks: 3,\n    bookings: 0,\n    conversion_rate: 0.000,\n    net_revenue: 0,\n    avg_daily_revenue: 737,\n    listing_status: \"live\",\n    search_rank: 47,  // Dropped from 12\n    alert_triggered: true\n  },\n  {\n    property_id: \"kasa_seattle_apt_405\", \n    property_name: \"Kasa Seattle Downtown Loft\",\n    platform: \"expedia\",\n    date: \"2024-08-20\",\n    impressions: 180,  // 75% drop\n    impressions_avg: 680,\n    clicks: 1,\n    bookings: 0,\n    net_revenue: 0,\n    avg_daily_revenue: 467,\n    listing_status: \"error\",  // Critical issue!\n    calendar_last_updated: \"2024-08-19T15:30:00Z\",\n    alert_triggered: true\n  },\n  {\n    property_id: \"kasa_nashville_house_809\",\n    property_name: \"Kasa Nashville Music Row House\",\n    platform: \"booking.com\",\n    date: \"2024-08-20\", \n    impressions: 450,  // 70% drop\n    impressions_avg: 1465,\n    clicks: 4,\n    bookings: 0,\n    net_revenue: 0,\n    avg_daily_revenue: 1602,\n    listing_status: \"live\",\n    calendar_last_updated: \"2024-08-20T08:15:00Z\",  // 10+ hours stale\n    alert_triggered: true\n  },\n  {\n    property_id: \"kasa_portland_studio_505\",\n    property_name: \"Kasa Portland Pearl District\",\n    platform: \"airbnb\",\n    date: \"2024-08-20\",\n    impressions: 90,  // 73% drop\n    impressions_avg: 330,\n    clicks: 1,\n    bookings: 0,\n    net_revenue: 0,\n    avg_daily_revenue: 106,\n    listing_status: \"suspended\",  // Account suspended!\n    instant_book: false,\n    alert_triggered: true\n  },\n  {\n    property_id: \"kasa_austin_loft_203\",\n    property_name: \"Kasa Austin Downtown Loft\",\n    platform: \"airbnb\",\n    date: \"2024-08-20\",\n    impressions: 1050,\n    impressions_avg: 1016,\n    clicks: 42,\n    bookings: 4,\n    conversion_rate: 0.095,\n    net_revenue: 813,\n    avg_daily_revenue: 814,\n    listing_status: \"live\",\n    search_rank: 3,\n    alert_triggered: false  // Performing well\n  },\n  {\n    property_id: \"kasa_chicago_apt_606\",\n    property_name: \"Kasa Chicago River North\",\n    platform: \"booking.com\",\n    date: \"2024-08-20\",\n    impressions: 400,  // 55% drop - triggers HIGH\n    impressions_avg: 890,\n    clicks: 15,\n    bookings: 1,\n    net_revenue: 180,\n    avg_daily_revenue: 380,\n    listing_status: \"live\",\n    search_rank: 25,\n    alert_triggered: true\n  },\n  {\n    property_id: \"kasa_boston_studio_707\",\n    property_name: \"Kasa Boston Back Bay Studio\",\n    platform: \"expedia\",\n    date: \"2024-08-20\",\n    impressions: 280,  // 40% drop - triggers MEDIUM\n    impressions_avg: 470,\n    clicks: 8,\n    bookings: 1,\n    net_revenue: 150,\n    avg_daily_revenue: 220,\n    listing_status: \"live\",\n    search_rank: 18,\n    alert_triggered: true\n  }\n];\n\n// Process each property and create alerts\nconst alerts = [];\n\nfor (const property of otaData) {\n  if (!property.alert_triggered) continue;\n  \n  // Calculate impact metrics\n  const impressionDropPct = Math.round(((property.impressions_avg - property.impressions) / property.impressions_avg) * 100);\n  const revenueAtRisk = property.avg_daily_revenue;\n  \n  // Determine severity and create alert\n  let severity = \"MEDIUM\";\n  let emoji = \"⚠️\";\n  let channel = \"#ota-alerts-medium\";\n  let color = \"#FFA500\";\n  let mentions = \"\";  // Who to tag\n  \n  // Critical conditions\n  if (property.listing_status === \"error\" || property.listing_status === \"suspended\") {\n    severity = \"CRITICAL\";\n    emoji = \"🚨\";\n    channel = \"#ota-alerts-critical\";\n    color = \"#FF0000\";\n    mentions = \"<!channel> @revenue-team @distribution-team\";  // Tag everyone for critical\n  } else if (impressionDropPct > 70 && revenueAtRisk > 500) {\n    severity = \"CRITICAL\";\n    emoji = \"🚨\";\n    channel = \"#ota-alerts-critical\";\n    color = \"#FF0000\";\n    mentions = \"@revenue-team @ops-manager\";  // Tag revenue team for high-value drops\n  } else if (impressionDropPct > 50) {\n    severity = \"HIGH\";\n    emoji = \"⚠️\";\n    channel = \"#ota-alerts-high\";\n    color = \"#FF8C00\";\n    mentions = \"@distribution-team\";  // Tag distribution for moderate issues\n  }\n  \n  // Build alert message\n  let issueDescription = \"\";\n  let actionRequired = \"\";\n  \n  if (property.listing_status === \"error\") {\n    issueDescription = \"Listing showing ERROR status on \" + property.platform;\n    actionRequired = \"1. Check \" + property.platform + \" extranet immediately\\n2. Contact OTA support if needed\\n3. Verify PMS sync status\";\n  } else if (property.listing_status === \"suspended\") {\n    issueDescription = \"Listing SUSPENDED on \" + property.platform;\n    actionRequired = \"1. Contact \" + property.platform + \" support IMMEDIATELY\\n2. Review account for policy violations\\n3. Escalate to Revenue Management team\";\n  } else if (impressionDropPct > 70) {\n    issueDescription = `Impressions dropped ${impressionDropPct}% (${property.impressions} vs ${property.impressions_avg} avg)`;\n    actionRequired = \"1. Verify listing is live on \" + property.platform + \"\\n2. Check search ranking (currently #\" + (property.search_rank || \"N/A\") + \")\\n3. Review pricing competitiveness\";\n  } else {\n    issueDescription = `Performance drop detected: ${impressionDropPct}% below average`;\n    actionRequired = \"1. Review listing content\\n2. Check competitor pricing\\n3. Verify availability calendar\";\n  }\n  \n  // Check for stale calendar\n  if (property.calendar_last_updated) {\n    const hoursStale = Math.round((Date.now() - new Date(property.calendar_last_updated)) / (1000 * 60 * 60));\n    if (hoursStale > 12) {\n      issueDescription += `\\n📅 Calendar ${hoursStale} hours out of date`;\n      actionRequired += \"\\n4. Force calendar sync in PMS\";\n    }\n  }\n  \n  // Calculate weekly and monthly revenue impact\n  const weeklyImpact = Math.round(revenueAtRisk * 7);\n  const monthlyImpact = Math.round(revenueAtRisk * 30);\n  \n  alerts.push({\n    json: {\n      severity: severity,\n      emoji: emoji,\n      channel: channel,\n      color: color,\n      mentions: mentions,  // Add team mentions\n      property_id: property.property_id,\n      property_name: property.property_name,\n      platform: property.platform.toUpperCase(),\n      issue: issueDescription,\n      drop_percentage: impressionDropPct,  // Make this a direct field\n      revenue_impact_daily: revenueAtRisk,\n      revenue_impact_weekly: weeklyImpact,\n      revenue_impact_monthly: monthlyImpact,\n      revenue_impact: `$${weeklyImpact}/week ($${monthlyImpact}/month) at risk`,\n      action: actionRequired,\n      metrics: {\n        impressions: property.impressions,\n        impressions_expected: property.impressions_avg,\n        drop_percentage: impressionDropPct + \"%\",\n        current_bookings: property.bookings,\n        listing_status: property.listing_status,\n        search_rank: property.search_rank || \"N/A\"\n      },\n      direct_link: `https://${property.platform}.com/manage/${property.property_id}`,\n      timestamp: new Date().toISOString(),\n      // Full message with mentions\n      slack_text: `${emoji} ${mentions} *${severity} ALERT*: ${property.property_name} on ${property.platform.toUpperCase()}\\n📉 Drop: ${impressionDropPct}% - ${issueDescription}\\n💰 Revenue Impact: $${weeklyImpact}/week ($${monthlyImpact}/month) at risk\\n🔗 <${`https://${property.platform}.com/manage/${property.property_id}`}|Fix it now>`\n    }\n  });\n}\n\n// Return alerts for Slack\nreturn alerts;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -224
+      ],
+      "id": "cd9ff8b7-c861-41bc-bfc5-4cb527b70b19",
+      "name": "Code",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/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",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"text\": $json.slack_text, \"channel\": $json.channel} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        -416
+      ],
+      "id": "e039f109-a7fc-42ce-89de-4674a1577a6e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.severity }}",
+                    "rightValue": "CRITICAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "52abad53-52e7-4734-b40d-ca31702589a9"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4be5d467-31dc-49cb-bebc-56e5021b6022",
+                    "leftValue": "={{ $json.severity }}",
+                    "rightValue": "HIGH",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2828ef86-bc50-4258-8433-1e467be3b255",
+                    "leftValue": "={{ $json.severity }}",
+                    "rightValue": "MEDIUM",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        -240
+      ],
+      "id": "92400ffe-d018-4fc0-9d7f-5b65215e307d",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/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",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"text\": $json.slack_text, \"channel\": $json.channel} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        -224
+      ],
+      "id": "f6ea2b33-fd9a-419c-a6ce-a794102ff11e",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/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",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"text\": $json.slack_text, \"channel\": $json.channel} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        672,
+        -32
+      ],
+      "id": "3a164fae-6d0d-44fc-a76e-dbc88c4c3262",
+      "name": "HTTP Request2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6cc5fb98-bc66-471f-9a1c-d78787550846",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e614bc2c503f55f63ceee6d97ca0ef8336ef14791d0abcdfb3367f3bfb7c7881"
+  },
+  "id": "RxtYJUu1IhNsYTQx",
+  "tags": []
+}

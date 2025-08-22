@@ -1,0 +1,1 @@
+={{ {"text": $json.slack_text, "channel": $json.channel} }}
